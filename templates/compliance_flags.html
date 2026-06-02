@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+
+{% block title %}Splana - NDIS Compliance Flags{% endblock %}
+{% block page_header %}NDIS Compliance Flags{% endblock %}
+
+{% block content %}
+<div class="data-table-container">
+    <div class="table-filter-bar">
+        <div class="filter-group">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search by Invoice #, Participant, or Details..." onkeyup="filterTable()">
+            
+            <select id="ruleFilter" class="filter-select" onchange="filterTable()">
+                <option value="">All Rules</option>
+                <option value="rate_limit">Rate Limit Exceeded</option>
+                <option value="duration_reasonableness">Duration Reasonableness</option>
+                <option value="time_of_day">Time-of-day Pricing</option>
+                <option value="cancellation">Cancellation Rules</option>
+            </select>
+
+            <select id="statusFilter" class="filter-select" onchange="filterTable()">
+                <option value="">All Statuses</option>
+                <option value="unresolved">Unresolved Only</option>
+                <option value="resolved">Resolved</option>
+                <option value="reviewed">Reviewed</option>
+            </select>
+        </div>
+        
+        <div style="font-size: 13px; font-weight: 600; color: var(--text-muted);">
+            Showing <span id="filteredCount">0</span> of {{ results|length }} compliance alerts
+        </div>
+    </div>
+
+    <table class="high-density-table" id="complianceTable">
+        <thead>
+            <tr>
+                <th>Invoice #</th>
+                <th>Participant</th>
+                <th>NDIS Code</th>
+                <th>Date</th>
+                <th>Rule Violated</th>
+                <th style="width: 30%;">Details</th>
+                <th>Recommended Action</th>
+                <th>Severity</th>
+                <th style="width: 15%;">Audit Workflow</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in results %}
+            <tr data-rule="{{ row.rule_violated|lower }}" 
+                data-resolved="{{ row.resolved }}" 
+                data-reviewed="{{ row.reviewed }}"
+                style="background-color: {% if row.resolved == 1 %}#F0FDF4{% elif row.reviewed == 1 %}#EFF6FF{% else %}none{% endif %};">
+                <td><strong>{{ row.invoice_number }}</strong></td>
+                <td>{{ row.participant_reference }}</td>
+                <td><span class="badge" style="font-family: monospace; background-color: #F3F4F6; color: #374151; font-weight: 500;">{{ row.support_item_code }}</span></td>
+                <td>{{ row.line_date }}</td>
+                <td>
+                    <span class="badge severity-low" style="background-color: #EEF2F6; color: #1E293B;">
+                        {{ row.rule_violated|replace('_', ' ') }}
+                    </span>
+                </td>
+                <td style="font-size: 12px;">{{ row.details }}</td>
+                <td style="font-size: 12px; font-weight: 500; color: var(--accent);">{{ row.recommended_action }}</td>
+                <td>
+                    <span class="badge severity-{{ row.severity|lower }}">
+                        {{ row.severity }}
+                    </span>
+                </td>
+                <td>
+                    <div style="display: flex; gap: 6px;">
+                        <!-- Reviewed Toggle -->
+                        <button class="btn btn-secondary btn-small {% if row.reviewed == 1 %}btn-success{% endif %}" 
+                                style="padding: 4px 8px; font-size: 10px; display: inline-flex; align-items: center; gap: 4px;"
+                                onclick="toggleStatus(this, {{ row.flag_id }}, 'reviewed')"
+                                {% if user.role == 'readonly' %}disabled title="Read-only user cannot update audit status"{% endif %}>
+                            <i class="fa-solid {% if row.reviewed == 1 %}fa-square-check{% else %}fa-square{% endif %}"></i>
+                            <span>Reviewed</span>
+                        </button>
+                        
+                        <!-- Resolved Toggle -->
+                        <button class="btn btn-secondary btn-small {% if row.resolved == 1 %}btn-success{% endif %}" 
+                                style="padding: 4px 8px; font-size: 10px; display: inline-flex; align-items: center; gap: 4px;"
+                                onclick="toggleStatus(this, {{ row.flag_id }}, 'resolved')"
+                                {% if user.role == 'readonly' %}disabled title="Read-only user cannot resolve alerts"{% endif %}>
+                            <i class="fa-solid {% if row.resolved == 1 %}fa-circle-check{% else %}fa-circle-xmark{% endif %}"></i>
+                            <span>Resolved</span>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 48px;">
+                    <i class="fa-solid fa-shield-check" style="font-size: 32px; margin-bottom: 12px; display: block; color: var(--success);"></i>
+                    No compliance flags! All claims are compliant with NDIS Price Guide rules.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function filterTable() {
+        const query = document.getElementById("searchInput").value.toLowerCase();
+        const rule = document.getElementById("ruleFilter").value.toLowerCase();
+        const status = document.getElementById("statusFilter").value.toLowerCase();
+        
+        const table = document.getElementById("complianceTable");
+        const rows = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+        let visibleCount = 0;
+        
+        for (let row of rows) {
+            if (row.cells.length === 1) continue;
+            
+            const textContent = row.textContent.toLowerCase();
+            const rowRule = row.getAttribute("data-rule") || "";
+            const isResolved = row.getAttribute("data-resolved") === "1";
+            const isReviewed = row.getAttribute("data-reviewed") === "1";
+            
+            const matchQuery = textContent.includes(query);
+            const matchRule = rule === "" || rowRule === rule;
+            
+            let matchStatus = true;
+            if (status === "unresolved") {
+                matchStatus = !isResolved;
+            } else if (status === "resolved") {
+                matchStatus = isResolved;
+            } else if (status === "reviewed") {
+                matchStatus = isReviewed;
+            }
+            
+            if (matchQuery && matchRule && matchStatus) {
+                row.style.display = "";
+                visibleCount++;
+            } else {
+                row.style.display = "none";
+            }
+        }
+        document.getElementById("filteredCount").textContent = visibleCount;
+    }
+    
+    function toggleStatus(btn, flagId, action) {
+        // Toggle the value
+        const isCurrentlyActive = btn.classList.contains("btn-success");
+        const newValue = isCurrentlyActive ? 0 : 1;
+        
+        // Build FormData
+        const formData = new FormData();
+        formData.append("action", action);
+        formData.append("value", newValue);
+        
+        // AJAX Request
+        fetch(`/toggle-compliance/${flagId}`, {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "success") {
+                // Update UI state
+                const row = btn.parentElement.parentElement.parentElement;
+                
+                if (action === 'reviewed') {
+                    row.setAttribute("data-reviewed", newValue);
+                    if (newValue === 1) {
+                        btn.classList.add("btn-success");
+                        btn.querySelector("i").className = "fa-solid fa-square-check";
+                    } else {
+                        btn.classList.remove("btn-success");
+                        btn.querySelector("i").className = "fa-solid fa-square";
+                    }
+                } else if (action === 'resolved') {
+                    row.setAttribute("data-resolved", newValue);
+                    if (newValue === 1) {
+                        btn.classList.add("btn-success");
+                        btn.querySelector("i").className = "fa-solid fa-circle-check";
+                    } else {
+                        btn.classList.remove("btn-success");
+                        btn.querySelector("i").className = "fa-solid fa-circle-xmark";
+                    }
+                }
+                
+                // Color code the row background
+                const resolvedVal = row.getAttribute("data-resolved") === "1";
+                const reviewedVal = row.getAttribute("data-reviewed") === "1";
+                
+                if (resolvedVal) {
+                    row.style.backgroundColor = "#F0FDF4"; // Light green
+                } else if (reviewedVal) {
+                    row.style.backgroundColor = "#EFF6FF"; // Light blue
+                } else {
+                    row.style.backgroundColor = ""; // Default
+                }
+                
+                filterTable();
+            } else {
+                alert("Could not update audit status.");
+            }
+        })
+        .catch(err => {
+            console.error("Error updating status:", err);
+            alert("Network error updating status.");
+        });
+    }
+    
+    window.onload = function() {
+        filterTable();
+    }
+</script>
+{% endblock %}

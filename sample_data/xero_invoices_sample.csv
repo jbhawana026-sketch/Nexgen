@@ -1,0 +1,18 @@
+invoice_number,line_date,participant_reference,support_item_code,description,quantity,unit_amount,line_total,payment_status
+INV-1000,01/05/2026,P001,01_011_0107_1_1,Access Community Social - Weekday service for John Doe,3.0,$67.56,202.68,Paid
+INV-1001,04/05/2026,P001,01_011_0107_1_1,Access Community Social - Weekday service for John Doe,3.0,$67.56,202.68,Paid
+INV-1002,05-May-2026,P001,01_011_0107_1_1,Access Community Social - Weekday service for John Doe,3.0,$67.56,202.68,Paid
+INV-1003,05-May-2026,P004,01_011_0107_1_1,Extra community access service billed,2.0,$67.56,135.12,Awaiting Payment
+INV-1004,2026-05-06,P001,01_011_0107_1_1,Access Community Social - Weekday service for John Doe,3.0,$67.56,202.68,Paid
+INV-1005,07/05/2026,P001,01_011_0107_1_1,Access Community Social - Weekday service for John Doe,3.0,$67.56,202.68,Paid
+INV-1006,08-May-2026,P001,01_011_0107_1_1,Access Community Social - Weekday service for John Doe,3.0,$67.56,202.68,Paid
+INV-1007,08-May-2026,P001,01_011_0107_1_1,Access Community Social - John Doe,5.0,$67.56,337.8,Paid
+INV-1008,2026-05-09,P002,01_011_0107_1_1,Saturday service billed at standard weekday rate,2.0,$67.56,135.12,Paid
+INV-1009,11-May-2026,P001,01_011_0107_1_1,Access Community Social - Weekday service for John Doe,3.0,$67.56,202.68,Paid
+INV-1010,2026-05-12,P001,01_011_0107_1_1,Access Community Social - Weekday service for John Doe,3.0,$67.56,202.68,Paid
+INV-1011,2026-05-12,P001,01_011_0107_1_1,Access Community - Typos in quantity (26 hours billed!),26.0,$67.56,1756.56,Awaiting Payment
+INV-1012,13/05/2026,P001,01_011_0107_1_1,Access Community Social - Weekday service for John Doe,3.0,$67.56,202.68,Paid
+INV-1013,13/05/2026,P003,01_011_0107_1_1,Community Standard Weekday - Cancelled without notice but billed full rate,2.0,$67.56,135.12,Paid
+INV-1014,14-May-2026,P001,01_011_0107_1_1,Access Community Social - Weekday service for John Doe,3.0,$67.56,202.68,Paid
+INV-1015,15/05/2026,P001,01_015_0107_1_1,Midnight shift community access - John Doe,4.0,$74.45,297.8,Paid
+INV-1016,2026-05-15,P001,01_011_0107_1_1,Access Community Social - Weekday service for John Doe,3.0,$67.56,202.68,Paid

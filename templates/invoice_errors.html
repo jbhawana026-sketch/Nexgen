@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block title %}Splana - Invoice Errors{% endblock %}
+{% block page_header %}Invoice Discrepancies & Errors{% endblock %}
+
+{% block content %}
+<!-- Page Summary Metric -->
+<div class="kpi-grid" style="margin-bottom: 24px; display: flex; gap: 24px;">
+    <div class="kpi-card invoice-errors" style="flex: 1; max-width: 320px;">
+        <div class="kpi-label">Total Invoice Error Cost</div>
+        <div class="kpi-value">${{ "{:,.2f}".format(total_error_cost) }}</div>
+        <div class="kpi-change warning">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span style="margin-left: 4px;">Overbilled rates & quantity overruns</span>
+        </div>
+    </div>
+</div>
+
+<div class="data-table-container">
+    <div class="table-filter-bar">
+        <div class="filter-group">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search by Invoice #, Participant, or Code..." onkeyup="filterTable()">
+            
+            <select id="severityFilter" class="filter-select" onchange="filterTable()">
+                <option value="">All Severities</option>
+                <option value="high">High Severity</option>
+                <option value="medium">Medium Severity</option>
+            </select>
+
+            <select id="discrepancyFilter" class="filter-select" onchange="filterTable()">
+                <option value="">All Discrepancy Types</option>
+                <option value="missing_shift">Missing Shift (Unmatched)</option>
+                <option value="duration_mismatch">Duration Mismatch</option>
+                <option value="rate_mismatch">Rate Mismatch</option>
+            </select>
+        </div>
+        
+        <div style="font-size: 13px; font-weight: 600; color: var(--text-muted);">
+            Showing <span id="filteredCount">0</span> of {{ results|length }} invoice lines
+        </div>
+    </div>
+
+    <table class="high-density-table" id="invoicesTable">
+        <thead>
+            <tr>
+                <th>Invoice #</th>
+                <th>Participant Ref</th>
+                <th>NDIS Code</th>
+                <th>Date</th>
+                <th>Billed Qty</th>
+                <th>Unit Rate</th>
+                <th>Line Total</th>
+                <th>Discrepancy Type</th>
+                <th style="text-align: right;">Discrepancy Value</th>
+                <th>Severity</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in results %}
+            <tr data-severity="{{ row.flag_severity|lower }}" data-discrepancy="{{ row.discrepancy_type|lower }}" style="cursor: pointer;" onclick="openDetailsModal('{{ row.invoice_number }}', '{{ row.participant_reference }}', '{{ row.support_item_code }}', '{{ row.line_date }}', '{{ row.quantity }}', '{{ row.unit_amount }}', '{{ row.line_total }}', '{{ row.discrepancy_type }}', '{{ row.discrepancy_amount }}', '{{ row.notes|replace('\'', '\\\'') }}')">
+                <td><strong>{{ row.invoice_number }}</strong></td>
+                <td>{{ row.participant_reference }}</td>
+                <td><span class="badge" style="font-family: monospace; background-color: #F3F4F6; color: #374151; font-weight: 500;">{{ row.support_item_code }}</span></td>
+                <td>{{ row.line_date }}</td>
+                <td>{{ row.quantity }}</td>
+                <td>${{ "{:,.2f}".format(row.unit_amount) }}</td>
+                <td>${{ "{:,.2f}".format(row.line_total) }}</td>
+                <td>
+                    <span class="badge {% if row.discrepancy_type == 'missing_shift' %}severity-high{% else %}severity-medium{% endif %}">
+                        {{ row.discrepancy_type|replace('_', ' ') }}
+                    </span>
+                </td>
+                <td style="text-align: right; font-weight: 600; color: var(--danger);">
+                    ${{ "{:,.2f}".format(row.discrepancy_amount) }}
+                </td>
+                <td>
+                    <span class="badge severity-{{ row.flag_severity|lower }}">
+                        {{ row.flag_severity }}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-secondary btn-small" onclick="event.stopPropagation(); this.parentElement.parentElement.click();">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="11" style="text-align: center; color: var(--text-muted); padding: 48px;">
+                    <i class="fa-solid fa-clipboard-check" style="font-size: 32px; margin-bottom: 12px; display: block; color: var(--success);"></i>
+                    No billing discrepancies! All invoices match ShiftCare logs perfectly.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Details Modal -->
+<div class="modal" id="detailsModal" onclick="closeDetailsModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title">Xero Invoice Line Details</h3>
+            <span class="close-modal-btn" onclick="closeDetailsModal(event)">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <span class="detail-label">Invoice Number</span>
+                    <span class="detail-val" id="m_inv_num"></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Participant Reference</span>
+                    <span class="detail-val" id="m_part_ref"></span>
+                </div>
+                <div class="detail-item" style="grid-column: span 2;">
+                    <span class="detail-label">Support Item Code</span>
+                    <span class="detail-val code" id="m_code"></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Invoice Line Date</span>
+                    <span class="detail-val" id="m_date"></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Quantity (Billed Hours)</span>
+                    <span class="detail-val" id="m_quantity"></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Unit Rate</span>
+                    <span class="detail-val" id="m_unit_rate"></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Line Total Billed</span>
+                    <span class="detail-val" id="m_line_total" style="font-weight: 600;"></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Discrepancy Type</span>
+                    <span class="detail-val" id="m_discrepancy_type" style="text-transform: capitalize;"></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Discrepancy Value ($)</span>
+                    <span class="detail-val" id="m_discrepancy_val" style="color: var(--danger); font-weight: 700; font-size: 15px;"></span>
+                </div>
+                <div class="detail-item" style="grid-column: span 2; margin-top: 12px; border-top: 1px solid var(--border-color); padding-top: 12px;">
+                    <span class="detail-label">Audit Investigation Notes</span>
+                    <span class="detail-val" id="m_notes" style="font-style: italic; color: #374151;"></span>
+                </div>
+            </div>
+            
+            <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="closeDetailsModal(event)">Close Window</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function filterTable() {
+        const query = document.getElementById("searchInput").value.toLowerCase();
+        const severity = document.getElementById("severityFilter").value.toLowerCase();
+        const discrepancy = document.getElementById("discrepancyFilter").value.toLowerCase();
+        
+        const table = document.getElementById("invoicesTable");
+        const rows = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+        let visibleCount = 0;
+        
+        for (let row of rows) {
+            if (row.cells.length === 1) continue;
+            
+            const textContent = row.textContent.toLowerCase();
+            const rowSeverity = row.getAttribute("data-severity") || "";
+            const rowDiscrepancy = row.getAttribute("data-discrepancy") || "";
+            
+            const matchQuery = textContent.includes(query);
+            const matchSeverity = severity === "" || rowSeverity === severity;
+            const matchDiscrepancy = discrepancy === "" || rowDiscrepancy === discrepancy;
+            
+            if (matchQuery && matchSeverity && matchDiscrepancy) {
+                row.style.display = "";
+                visibleCount++;
+            } else {
+                row.style.display = "none";
+            }
+        }
+        document.getElementById("filteredCount").textContent = visibleCount;
+    }
+    
+    function openDetailsModal(inv_num, part_ref, code, date, quantity, unit_rate, line_total, discrepancy_type, discrepancy_val, notes) {
+        document.getElementById("m_inv_num").textContent = inv_num;
+        document.getElementById("m_part_ref").textContent = part_ref;
+        document.getElementById("m_code").textContent = code;
+        document.getElementById("m_date").textContent = date;
+        document.getElementById("m_quantity").textContent = quantity + " units";
+        document.getElementById("m_unit_rate").textContent = "$" + parseFloat(unit_rate).toFixed(2);
+        document.getElementById("m_line_total").textContent = "$" + parseFloat(line_total).toFixed(2);
+        document.getElementById("m_discrepancy_type").textContent = discrepancy_type.replace('_', ' ');
+        document.getElementById("m_discrepancy_val").textContent = "$" + parseFloat(discrepancy_val).toFixed(2);
+        document.getElementById("m_notes").textContent = notes;
+        
+        document.getElementById("detailsModal").style.display = "flex";
+    }
+    
+    function closeDetailsModal(e) {
+        document.getElementById("detailsModal").style.display = "none";
+    }
+    
+    window.onload = function() {
+        filterTable();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% block title %}Splana - Unmatched Shifts{% endblock %}
+{% block page_header %}Unmatched Shifts (Revenue Leakage){% endblock %}
+
+{% block content %}
+<!-- Page Summary Metric -->
+<div class="kpi-grid" style="margin-bottom: 24px; display: flex; gap: 24px;">
+    <div class="kpi-card leakage" style="flex: 1; max-width: 320px;">
+        <div class="kpi-label">Total Revenue Leakage</div>
+        <div class="kpi-value">${{ "{:,.2f}".format(total_leakage) }}</div>
+        <div class="kpi-change negative">
+            <i class="fa-solid fa-arrow-trend-up"></i>
+            <span style="margin-left: 4px;">Unbilled & underbilled care hours</span>
+        </div>
+    </div>
+</div>
+
+<div class="data-table-container">
+    <div class="table-filter-bar">
+        <div class="filter-group">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search by Participant, Staff, or Code..." onkeyup="filterTable()">
+            
+            <select id="severityFilter" class="filter-select" onchange="filterTable()">
+                <option value="">All Severities</option>
+                <option value="high">High Severity</option>
+                <option value="medium">Medium Severity</option>
+                <option value="low">Low Severity</option>
+            </select>
+
+            <select id="statusFilter" class="filter-select" onchange="filterTable()">
+                <option value="">All Claim Statuses</option>
+                <option value="unclaimed">Unclaimed</option>
+                <option value="claimed">Claimed</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+        
+        <div style="font-size: 13px; font-weight: 600; color: var(--text-muted);">
+            Showing <span id="filteredCount">0</span> of {{ results|length }} unmatched logs
+        </div>
+    </div>
+
+    <table class="high-density-table" id="shiftsTable">
+        <thead>
+            <tr>
+                <th>Shift ID</th>
+                <th>Participant</th>
+                <th>NDIS Code</th>
+                <th>Date</th>
+                <th>Duration (h)</th>
+                <th>Staff Member</th>
+                <th>Location</th>
+                <th>Claim Status</th>
+                <th style="text-align: right;">Est. Revenue Leakage</th>
+                <th>Severity</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in results %}
+            <tr data-severity="{{ row.flag_severity|lower }}" data-status="{{ row.claim_status|lower }}" style="cursor: pointer;" onclick="openDetailsModal('{{ row.shift_id }}', '{{ row.participant_id }}', '{{ row.support_item_code }}', '{{ row.service_date }}', '{{ row.duration_hours }}', '{{ row.staff_id }}', '{{ row.location }}', '{{ row.claim_status }}', '{{ row.discrepancy_amount }}', '{{ row.notes|replace('\'', '\\\'') }}')">
+                <td><strong>{{ row.shift_id }}</strong></td>
+                <td>{{ row.participant_id }}</td>
+                <td><span class="badge" style="font-family: monospace; background-color: #F3F4F6; color: #374151; font-weight: 500;">{{ row.support_item_code }}</span></td>
+                <td>{{ row.service_date }}</td>
+                <td>{{ row.duration_hours }} hrs</td>
+                <td>{{ row.staff_id }}</td>
+                <td>{{ row.location }}</td>
+                <td>
+                    <span class="badge {% if row.claim_status|lower == 'cancelled' %}severity-medium{% elif row.claim_status|lower == 'claimed' %}status-matched{% else %}status-partial{% endif %}">
+                        {{ row.claim_status }}
+                    </span>
+                </td>
+                <td style="text-align: right; font-weight: 600; color: var(--danger);">
+                    ${{ "{:,.2f}".format(row.discrepancy_amount) }}
+                </td>
+                <td>
+                    <span class="badge severity-{{ row.flag_severity|lower }}">
+                        {{ row.flag_severity }}
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-secondary btn-small" onclick="event.stopPropagation(); this.parentElement.parentElement.click();">
+                        <i class="fa-solid fa-eye"></i>
+                    </button>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="11" style="text-align: center; color: var(--text-muted); padding: 48px;">
+                    <i class="fa-solid fa-clipboard-check" style="font-size: 32px; margin-bottom: 12px; display: block; color: var(--success);"></i>
+                    No unmatched shifts! All recorded care hours are fully invoiced in Xero.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Details Modal -->
+<div class="modal" id="detailsModal" onclick="closeDetailsModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="modal-title" id="m_title">Shiftcare Shift Details</h3>
+            <span class="close-modal-btn" onclick="closeDetailsModal(event)">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <span class="detail-label">Shift ID</span>
+                    <span class="detail-val" id="m_shift_id"></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Participant ID</span>
+                    <span class="detail-val" id="m_participant_id"></span>
+                </div>
+                <div class="detail-item" style="grid-column: span 2;">
+                    <span class="detail-label">Support Item Code</span>
+                    <span class="detail-val code" id="m_code"></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Service Date</span>
+                    <span class="detail-val" id="m_date"></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Duration Hours</span>
+                    <span class="detail-val" id="m_duration"></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Staff Member ID</span>
+                    <span class="detail-val" id="m_staff"></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Location / Hub</span>
+                    <span class="detail-val" id="m_location"></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Claim Status</span>
+                    <span class="detail-val" id="m_status"></span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Estimated Revenue Leakage</span>
+                    <span class="detail-val" id="m_leakage" style="color: var(--danger); font-weight: 700; font-size: 15px;"></span>
+                </div>
+                <div class="detail-item" style="grid-column: span 2; margin-top: 12px; border-top: 1px solid var(--border-color); padding-top: 12px;">
+                    <span class="detail-label">Audit Notes</span>
+                    <span class="detail-val" id="m_notes" style="font-style: italic; color: #374151;"></span>
+                </div>
+            </div>
+            
+            <div style="margin-top: 24px; display: flex; justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="closeDetailsModal(event)">Close Window</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function filterTable() {
+        const query = document.getElementById("searchInput").value.toLowerCase();
+        const severity = document.getElementById("severityFilter").value.toLowerCase();
+        const status = document.getElementById("statusFilter").value.toLowerCase();
+        
+        const table = document.getElementById("shiftsTable");
+        const rows = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+        let visibleCount = 0;
+        
+        for (let row of rows) {
+            // Skip empty/no data row
+            if (row.cells.length === 1) continue;
+            
+            const textContent = row.textContent.toLowerCase();
+            const rowSeverity = row.getAttribute("data-severity") || "";
+            const rowStatus = row.getAttribute("data-status") || "";
+            
+            const matchQuery = textContent.includes(query);
+            const matchSeverity = severity === "" || rowSeverity === severity;
+            const matchStatus = status === "" || rowStatus === status;
+            
+            if (matchQuery && matchSeverity && matchStatus) {
+                row.style.display = "";
+                visibleCount++;
+            } else {
+                row.style.display = "none";
+            }
+        }
+        document.getElementById("filteredCount").textContent = visibleCount;
+    }
+    
+    // Modal controls
+    function openDetailsModal(id, participant, code, date, duration, staff, loc, status, leakage, notes) {
+        document.getElementById("m_shift_id").textContent = id;
+        document.getElementById("m_participant_id").textContent = participant;
+        document.getElementById("m_code").textContent = code;
+        document.getElementById("m_date").textContent = date;
+        document.getElementById("m_duration").textContent = duration + " hours";
+        document.getElementById("m_staff").textContent = staff;
+        document.getElementById("m_location").textContent = loc || "N/A";
+        document.getElementById("m_status").textContent = status;
+        document.getElementById("m_leakage").textContent = "$" + parseFloat(leakage).toFixed(2);
+        document.getElementById("m_notes").textContent = notes || "No specific issues detected.";
+        
+        document.getElementById("detailsModal").style.display = "flex";
+    }
+    
+    function closeDetailsModal(e) {
+        document.getElementById("detailsModal").style.display = "none";
+    }
+    
+    // Initial filtered count set
+    window.onload = function() {
+        filterTable();
+    }
+</script>
+{% endblock %}

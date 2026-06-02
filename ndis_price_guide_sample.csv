@@ -1,0 +1,10 @@
+support_item_code,service_description,registration_group,unit,price_limit_national,effective_from,effective_to
+01_801_0115_1_1,SIL - Standard - Weekday Daytime,Assistance with Daily Life,hour,70.23,2025-07-01,2026-06-30
+01_802_0115_1_1,SIL - Standard - Weekday Evening,Assistance with Daily Life,hour,77.38,2025-07-01,2026-06-30
+01_811_0115_1_1,SIL - Standard - Saturday,Assistance with Daily Life,hour,98.83,2025-07-01,2026-06-30
+01_812_0115_1_1,SIL - Standard - Sunday,Assistance with Daily Life,hour,127.13,2025-07-01,2026-06-30
+01_813_0115_1_1,SIL - Standard - Public Holiday,Assistance with Daily Life,hour,155.43,2025-07-01,2026-06-30
+01_832_0115_1_1,SIL - Night-Time Sleepover,Assistance with Daily Life,each,287.41,2025-07-01,2026-06-30
+04_104_0125_6_1,Community Access - Standard - Weekday Daytime,Assistance with Social & Community Participation,hour,67.56,2025-07-01,2026-06-30
+04_103_0125_6_1,Community Access - Standard - Weekday Evening,Assistance with Social & Community Participation,hour,74.44,2025-07-01,2026-06-30
+04_105_0125_6_1,Community Access - Standard - Saturday,Assistance with Social & Community Participation,hour,95.07,2025-07-01,2026-06-30

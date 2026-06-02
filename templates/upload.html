@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Splana - Upload Center{% endblock %}
+{% block page_header %}Data Upload Center{% endblock %}
+
+{% block content %}
+<div style="max-width: 680px; margin: 0 auto;">
+    <div class="section-card">
+        <div class="section-header">
+            <h2 class="section-title">Upload Billing & Care Datasets</h2>
+        </div>
+        
+        <form action="{{ url_for('upload') }}" method="POST" enctype="multipart/form-data">
+            <div class="form-group" style="margin-bottom: 24px;">
+                <label class="form-label" for="file_type">Select Dataset Type</label>
+                <select id="file_type" name="file_type" class="filter-select" style="width: 100%; height: 42px; font-size: 14px;" required>
+                    <option value="" disabled selected>-- Select file type --</option>
+                    <option value="shiftcare">1. ShiftCare Shifts (Rostered Hours) - CSV or XML</option>
+                    <option value="xero">2. Xero Invoices (Billed Items) - CSV or XML</option>
+                    <option value="price_guide">3. NDIS Price Guide (Reference Limits) - CSV or XML</option>
+                </select>
+            </div>
+            
+            <div class="upload-panel" id="dropzone" style="margin-bottom: 24px;">
+                <i class="fa-solid fa-cloud-arrow-up upload-icon" id="upload-icon"></i>
+                <h3 class="upload-title" id="upload-title">Choose file or drag here</h3>
+                <p class="upload-subtitle">Supports CSV (.csv) and XML (.xml) files</p>
+                
+                <div class="file-input-wrapper">
+                    <button type="button" class="btn btn-secondary">Browse Files</button>
+                    <input type="file" id="file" name="file" accept=".csv,.xml" required onchange="handleFileSelect(this)">
+                </div>
+                
+                <div id="file-info" style="margin-top: 16px; font-size: 13px; font-weight: 600; color: var(--primary); display: none;">
+                    Selected: <span id="file-name"></span>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fa-solid fa-circle-play"></i>
+                    <span>Upload & Reconcile</span>
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="section-card" style="margin-top: 32px; background-color: #FAFAFA; border: 1px solid var(--border-color);">
+        <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--dark);">Important Formatting Requirements:</h3>
+        <ul style="font-size: 12px; padding-left: 20px; line-height: 1.8; color: var(--text-muted);">
+            <li><strong>ShiftCare:</strong> Must contain columns: <code>shift_id</code>, <code>participant_id</code>, <code>support_item_code</code>, <code>service_date</code>, <code>duration_hours</code>, <code>claim_status</code>.</li>
+            <li><strong>Xero:</strong> Must contain columns: <code>invoice_number</code>, <code>line_date</code>, <code>participant_reference</code>, <code>support_item_code</code>, <code>quantity</code>, <code>unit_amount</code>, <code>line_total</code>.</li>
+            <li><strong>NDIS Price Guide:</strong> Must contain columns: <code>support_item_code</code>, <code>price_limit_national</code>, <code>effective_from</code>, <code>effective_to</code>.</li>
+            <li><strong>Data formats:</strong> Unit amounts can include "$" and commas. Dates can be <code>YYYY-MM-DD</code> or <code>DD/MM/YYYY</code> or <code>DD-Mon-YYYY</code>.</li>
+            <li><strong>XML Schema:</strong> Elements inside root tag should be records containing tags corresponding to the column names listed above (e.g. <code>&lt;shift_id&gt;</code>, <code>&lt;participant_id&gt;</code>, etc.).</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file');
+    const uploadIcon = document.getElementById('upload-icon');
+    const uploadTitle = document.getElementById('upload-title');
+    const fileInfo = document.getElementById('file-info');
+    const fileName = document.getElementById('file-name');
+    
+    // Drag and drop event listeners
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, highlight, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, unhighlight, false);
+    });
+    
+    function highlight(e) {
+        e.preventDefault();
+        dropzone.style.borderColor = 'var(--primary)';
+        dropzone.style.backgroundColor = '#EFF6FF';
+    }
+    
+    function unhighlight(e) {
+        e.preventDefault();
+        dropzone.style.borderColor = '#CBD5E1';
+        dropzone.style.backgroundColor = 'var(--white)';
+    }
+    
+    dropzone.addEventListener('drop', handleDrop, false);
+    
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        if (files.length > 0) {
+            fileInput.files = files;
+            handleFileSelect(fileInput);
+        }
+    }
+    
+    function handleFileSelect(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            fileName.textContent = file.name;
+            fileInfo.style.display = 'block';
+            uploadIcon.className = "fa-solid fa-file-circle-check upload-icon";
+            uploadIcon.style.color = "var(--success)";
+            uploadTitle.textContent = "File ready to upload";
+        }
+    }
+</script>
+{% endblock %}

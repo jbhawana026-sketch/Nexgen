@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Splana - NDIS Billing Reconciliation{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages" id="flash-container">
+          {% for category, message in messages %}
+            <div class="flash-message {{ category }}">
+              {% if category == 'success' %}
+                <i class="fa-solid fa-circle-check"></i>
+              {% elif category == 'error' %}
+                <i class="fa-solid fa-circle-exclamation"></i>
+              {% else %}
+                <i class="fa-solid fa-triangle-exclamation"></i>
+              {% endif %}
+              <span>{{ message }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand-section">
+                <div class="brand-logo">S</div>
+                <div class="brand-name">SPLANA</div>
+            </div>
+            
+            <nav style="flex-grow: 1;">
+                <ul class="nav-menu">
+                    <li class="nav-item {% if request.path == url_for('dashboard') %}active{% endif %}">
+                        <a href="{{ url_for('dashboard') }}">
+                            <i class="fa-solid fa-chart-pie"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item {% if request.path == url_for('unmatched_shifts') %}active{% endif %}">
+                        <a href="{{ url_for('unmatched_shifts') }}">
+                            <i class="fa-solid fa-calendar-xmark"></i>
+                            <span>Unmatched Shifts</span>
+                        </a>
+                    </li>
+                    <li class="nav-item {% if request.path == url_for('invoice_errors') %}active{% endif %}">
+                        <a href="{{ url_for('invoice_errors') }}">
+                            <i class="fa-solid fa-file-invoice-dollar"></i>
+                            <span>Invoice Errors</span>
+                        </a>
+                    </li>
+                    <li class="nav-item {% if request.path == url_for('compliance_flags') %}active{% endif %}">
+                        <a href="{{ url_for('compliance_flags') }}">
+                            <i class="fa-solid fa-shield-halved"></i>
+                            <span>Compliance Flags</span>
+                        </a>
+                    </li>
+                    <li class="nav-item {% if request.path == url_for('price_rules') %}active{% endif %}">
+                        <a href="{{ url_for('price_rules') }}">
+                            <i class="fa-solid fa-book-open"></i>
+                            <span>NDIS Price Guide</span>
+                        </a>
+                    </li>
+                    {% if user.role in ['admin', 'finance'] %}
+                    <li class="nav-item {% if request.path == url_for('upload') %}active{% endif %}">
+                        <a href="{{ url_for('upload') }}">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <span>Upload Center</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <span class="user-email" title="{{ user.email }}">{{ user.email }}</span>
+                    <span class="user-role">{{ user.role }} user</span>
+                </div>
+                <a href="{{ url_for('logout') }}" class="logout-btn">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Log Out</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="app-header">
+                <h1 class="page-title">
+                    {% block page_header %}NDIS Reconciliation Prototype{% endblock %}
+                </h1>
+                
+                <div class="header-actions">
+                    {% block header_actions %}
+                    <a href="{{ url_for('export_reconciliation') }}" class="btn btn-secondary btn-small">
+                        <i class="fa-solid fa-download"></i>
+                        <span>Export CSV Report</span>
+                    </a>
+                    {% endblock %}
+                </div>
+            </header>
+            
+            <div class="content-body">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Dismiss flash messages automatically after 5 seconds
+        setTimeout(() => {
+            const container = document.getElementById('flash-container');
+            if (container) {
+                container.style.transition = 'opacity 0.5s ease';
+                container.style.opacity = '0';
+                setTimeout(() => container.remove(), 500);
+            }
+        }, 5000);
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

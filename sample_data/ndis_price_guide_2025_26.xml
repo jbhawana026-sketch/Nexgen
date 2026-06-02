@@ -1,0 +1,84 @@
+<?xml version="1.0" ?>
+<price_rules>
+  <price_rule>
+    <support_item_code>01_011_0107_1_1</support_item_code>
+    <service_description>Access Community Social and Rec Activ - Standard - Weekday</service_description>
+    <registration_group>Assist Access/Maintain Employ</registration_group>
+    <unit>H</unit>
+    <price_limit_national>67.56</price_limit_national>
+    <effective_from>2025-07-01</effective_from>
+    <effective_to>2026-06-30</effective_to>
+  </price_rule>
+  <price_rule>
+    <support_item_code>01_015_0107_1_1</support_item_code>
+    <service_description>Access Community Social and Rec Activ - Standard - Evening</service_description>
+    <registration_group>Assist Access/Maintain Employ</registration_group>
+    <unit>H</unit>
+    <price_limit_national>74.45</price_limit_national>
+    <effective_from>2025-07-01</effective_from>
+    <effective_to>2026-06-30</effective_to>
+  </price_rule>
+  <price_rule>
+    <support_item_code>01_013_0107_1_1</support_item_code>
+    <service_description>Access Community Social and Rec Activ - Standard - Saturday</service_description>
+    <registration_group>Assist Access/Maintain Employ</registration_group>
+    <unit>H</unit>
+    <price_limit_national>94.90</price_limit_national>
+    <effective_from>2025-07-01</effective_from>
+    <effective_to>2026-06-30</effective_to>
+  </price_rule>
+  <price_rule>
+    <support_item_code>01_014_0107_1_1</support_item_code>
+    <service_description>Access Community Social and Rec Activ - Standard - Sunday</service_description>
+    <registration_group>Assist Access/Maintain Employ</registration_group>
+    <unit>H</unit>
+    <price_limit_national>122.25</price_limit_national>
+    <effective_from>2025-07-01</effective_from>
+    <effective_to>2026-06-30</effective_to>
+  </price_rule>
+  <price_rule>
+    <support_item_code>01_012_0107_1_1</support_item_code>
+    <service_description>Access Community Social and Rec Activ - Standard - Public Holiday</service_description>
+    <registration_group>Assist Access/Maintain Employ</registration_group>
+    <unit>H</unit>
+    <price_limit_national>149.60</price_limit_national>
+    <effective_from>2025-07-01</effective_from>
+    <effective_to>2026-06-30</effective_to>
+  </price_rule>
+  <price_rule>
+    <support_item_code>15_055_0128_1_3</support_item_code>
+    <service_description>Assessment Recommendation Therapy or Training - Physiotherapist</service_description>
+    <registration_group>Therapeutic Supports</registration_group>
+    <unit>H</unit>
+    <price_limit_national>193.99</price_limit_national>
+    <effective_from>2025-07-01</effective_from>
+    <effective_to>2026-06-30</effective_to>
+  </price_rule>
+  <price_rule>
+    <support_item_code>15_056_0128_1_3</support_item_code>
+    <service_description>Assessment Recommendation Therapy or Training - Occupational Therapist</service_description>
+    <registration_group>Therapeutic Supports</registration_group>
+    <unit>H</unit>
+    <price_limit_national>193.99</price_limit_national>
+    <effective_from>2025-07-01</effective_from>
+    <effective_to>2026-06-30</effective_to>
+  </price_rule>
+  <price_rule>
+    <support_item_code>01_799_0107_1_1</support_item_code>
+    <service_description>Provider Travel - Non-Labor Costs</service_description>
+    <registration_group>Assist Access/Maintain Employ</registration_group>
+    <unit>KM</unit>
+    <price_limit_national>0.97</price_limit_national>
+    <effective_from>2025-07-01</effective_from>
+    <effective_to>2026-06-30</effective_to>
+  </price_rule>
+  <price_rule>
+    <support_item_code>04_111_0136_6_1</support_item_code>
+    <service_description>Group Activities in a Centre - Standard - Weekday</service_description>
+    <registration_group>Group/Centre Activities</registration_group>
+    <unit>H</unit>
+    <price_limit_national>35.40</price_limit_national>
+    <effective_from>2025-07-01</effective_from>
+    <effective_to>2026-06-30</effective_to>
+  </price_rule>
+</price_rules>

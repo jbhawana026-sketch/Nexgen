@@ -1,0 +1,18 @@
+shift_id,participant_id,support_item_code,service_date,start_time,end_time,duration_hours,staff_id,location,claim_status
+SH5000,P001,01_011_0107_1_1,2026-05-01,09:00,12:00,3.0,ST001,Sydney Central,claimed
+SH5001,P003,01_013_0107_1_1,02/05/2026,10:00,14:00,4.0,ST003,Parramatta,unclaimed
+SH5002,P001,01_011_0107_1_1,2026-05-04,09:00,12:00,3.0,ST001,Sydney Central,claimed
+SH5003,P001,01_011_0107_1_1,05/05/2026,09:00,12:00,3.0,ST001,Sydney Central,claimed
+SH5004,P001,01_011_0107_1_1,06-May-2026,09:00,12:00,3.0,ST001,Sydney Central,claimed
+SH5005,P001,01_011_0107_1_1,2026-05-07,09:00,12:00,3.0,ST001,Sydney Central,claimed
+SH5006,P001,01_011_0107_1_1,08/05/2026,09:00,12:00,3.0,ST001,Sydney Central,claimed
+SH5007,P001,01_011_0107_1_1,08/05/2026,12:00,16:00,4.0,ST001,Sydney Central,claimed
+SH5008,P002,01_013_0107_1_1,09-May-2026,13:00,15:00,2.0,ST002,North Sydney,claimed
+SH5009,P001,01_011_0107_1_1,11/05/2026,09:00,12:00,3.0,ST001,Sydney Central,claimed
+SH5010,P001,01_011_0107_1_1,12-May-2026,09:00,12:00,3.0,ST001,Sydney Central,claimed
+SH5011,P001,01_011_0107_1_1,12-May-2026,08:00,14:00,6.0,ST001,Sydney Central,claimed
+SH5012,P001,01_011_0107_1_1,2026-05-13,09:00,12:00,3.0,ST001,Sydney Central,claimed
+SH5013,P003,01_011_0107_1_1,2026-05-13,09:00,11:00,2.0,ST003,Parramatta,cancelled
+SH5014,P001,01_011_0107_1_1,14/05/2026,09:00,12:00,3.0,ST001,Sydney Central,claimed
+SH5015,P001,01_015_0107_1_1,14/05/2026,22:00,02:00,4.0,ST001,Sydney Central,claimed
+SH5016,P001,01_011_0107_1_1,15-May-2026,09:00,12:00,3.0,ST001,Sydney Central,claimed

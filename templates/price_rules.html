@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+
+{% block title %}Splana - NDIS Price Guide Reference{% endblock %}
+{% block page_header %}NDIS Price Guide Reference{% endblock %}
+
+{% block content %}
+<div class="data-table-container">
+    <div class="table-filter-bar">
+        <div class="filter-group">
+            <input type="text" id="searchInput" class="search-input" placeholder="Search by Code, Description, or Group..." onkeyup="filterTable()">
+        </div>
+        
+        <div style="font-size: 13px; font-weight: 600; color: var(--text-muted);">
+            Showing <span id="filteredCount">0</span> of {{ rules|length }} NDIS items
+        </div>
+    </div>
+
+    <table class="high-density-table" id="rulesTable">
+        <thead>
+            <tr>
+                <th>Support Item Code</th>
+                <th style="width: 40%;">Service Description</th>
+                <th>Registration Group</th>
+                <th>Unit</th>
+                <th style="text-align: right;">National Price Limit</th>
+                <th>Effective From</th>
+                <th>Effective To</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rules %}
+            <tr>
+                <td><span class="badge" style="font-family: monospace; background-color: #F3F4F6; color: #1F2937; font-weight: 600; font-size: 12px;">{{ row.support_item_code }}</span></td>
+                <td>{{ row.service_description }}</td>
+                <td>{{ row.registration_group }}</td>
+                <td style="font-weight: 600; color: var(--text-muted);">{{ row.unit }}</td>
+                <td style="text-align: right; font-weight: 700; color: var(--primary);">
+                    ${{ "{:,.2f}".format(row.price_limit_national) }}
+                </td>
+                <td>{{ row.effective_from }}</td>
+                <td>{{ row.effective_to }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 48px;">
+                    <i class="fa-solid fa-triangle-exclamation" style="font-size: 32px; margin-bottom: 12px; display: block; color: var(--warning);"></i>
+                    No NDIS Price Guide data loaded! Use the Upload Center to import the price guide file.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function filterTable() {
+        const query = document.getElementById("searchInput").value.toLowerCase();
+        const table = document.getElementById("rulesTable");
+        const rows = table.getElementsByTagName("tbody")[0].getElementsByTagName("tr");
+        let visibleCount = 0;
+        
+        for (let row of rows) {
+            if (row.cells.length === 1) continue;
+            
+            const textContent = row.textContent.toLowerCase();
+            const matchQuery = textContent.includes(query);
+            
+            if (matchQuery) {
+                row.style.display = "";
+                visibleCount++;
+            } else {
+                row.style.display = "none";
+            }
+        }
+        document.getElementById("filteredCount").textContent = visibleCount;
+    }
+    
+    window.onload = function() {
+        filterTable();
+    }
+</script>
+{% endblock %}

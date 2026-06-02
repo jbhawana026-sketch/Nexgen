@@ -1,0 +1,241 @@
+{% extends 'base.html' %}
+
+{% block title %}Splana - Reconciliation Dashboard{% endblock %}
+{% block page_header %}Partner Reconciliation Dashboard{% endblock %}
+
+{% block content %}
+<!-- KPI Summary Cards -->
+<div class="kpi-grid">
+    <div class="kpi-card leakage">
+        <div class="kpi-label">Revenue Leakage</div>
+        <div class="kpi-value">${{ "{:,.2f}".format(leakage) }}</div>
+        <div class="kpi-change negative">
+            <i class="fa-solid fa-arrow-trend-up"></i>
+            <span style="margin-left: 4px;">Unbilled care services</span>
+        </div>
+    </div>
+    
+    <div class="kpi-card invoice-errors">
+        <div class="kpi-label">Invoice Error Cost</div>
+        <div class="kpi-value">${{ "{:,.2f}".format(invoice_errors) }}</div>
+        <div class="kpi-change warning">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span style="margin-left: 4px;">Discrepancies & missing shifts</span>
+        </div>
+    </div>
+    
+    <div class="kpi-card compliance">
+        <div class="kpi-label">Compliance Flags</div>
+        <div class="kpi-value">{{ compliance_flags_count }}</div>
+        <div class="kpi-change neutral">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span style="margin-left: 4px;">NDIS guide violations</span>
+        </div>
+    </div>
+    
+    <div class="kpi-card coverage">
+        <div class="kpi-label">Match Coverage</div>
+        <div class="kpi-value">{{ coverage }}%</div>
+        <div class="kpi-change positive">
+            <i class="fa-solid fa-circle-check"></i>
+            <span style="margin-left: 4px;">Of shifts reconciled</span>
+        </div>
+    </div>
+</div>
+
+<!-- Reconciled Status Distribution Bar (Pure CSS Progress Indicator) -->
+{% if total_shifts > 0 %}
+<div class="section-card" style="margin-bottom: 32px;">
+    <div class="section-header">
+        <h2 class="section-title">Reconciliation Coverage Distribution</h2>
+        <span style="font-size: 13px; font-weight: 500; color: var(--text-muted);">Total Shifts: {{ total_shifts }}</span>
+    </div>
+    
+    {% set matched_cnt = status_counts.get('matched', 0) %}
+    {% set partial_cnt = status_counts.get('partial', 0) %}
+    {% set unmatched_cnt = status_counts.get('unmatched', 0) %}
+    {% set sum_cnt = matched_cnt + partial_cnt + unmatched_cnt %}
+    
+    {% if sum_cnt > 0 %}
+        {% set matched_pct = (matched_cnt / sum_cnt * 100) | round(1) %}
+        {% set partial_pct = (partial_cnt / sum_cnt * 100) | round(1) %}
+        {% set unmatched_pct = (unmatched_cnt / sum_cnt * 100) | round(1) %}
+    {% else %}
+        {% set matched_pct = 0.0 %}
+        {% set partial_pct = 0.0 %}
+        {% set unmatched_pct = 0.0 %}
+    {% endif %}
+    
+    <div style="display: flex; height: 24px; border-radius: 12px; overflow: hidden; margin-bottom: 16px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
+        <div style="width: {{ matched_pct }}%; background-color: var(--success); display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 700;" title="Matched: {{ matched_cnt }} shifts ({{ matched_pct }}%)">
+            {% if matched_pct > 8 %}{{ matched_pct }}%{% endif %}
+        </div>
+        <div style="width: {{ partial_pct }}%; background-color: var(--warning); display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 700;" title="Partial Discrepancies: {{ partial_cnt }} shifts ({{ partial_pct }}%)">
+            {% if partial_pct > 8 %}{{ partial_pct }}%{% endif %}
+        </div>
+        <div style="width: {{ unmatched_pct }}%; background-color: var(--danger); display: flex; align-items: center; justify-content: center; color: white; font-size: 11px; font-weight: 700;" title="Unmatched Leakage: {{ unmatched_cnt }} shifts ({{ unmatched_pct }}%)">
+            {% if unmatched_pct > 8 %}{{ unmatched_pct }}%{% endif %}
+        </div>
+    </div>
+    
+    <div style="display: flex; justify-content: center; gap: 24px; font-size: 12px; font-weight: 600;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="width: 12px; height: 12px; border-radius: 3px; background-color: var(--success);"></div>
+            <span>Perfect Match ({{ matched_cnt }})</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="width: 12px; height: 12px; border-radius: 3px; background-color: var(--warning);"></div>
+            <span>Partial Mismatches ({{ partial_cnt }})</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="width: 12px; height: 12px; border-radius: 3px; background-color: var(--danger);"></div>
+            <span>Unmatched / Unbilled ({{ unmatched_cnt }})</span>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Breakdown Sections -->
+<div class="dashboard-grid">
+    <!-- Leakage by Participant Card -->
+    <div class="section-card">
+        <div class="section-header">
+            <h2 class="section-title">Revenue Leakage by Participant (Top 5)</h2>
+            <a href="{{ url_for('unmatched_shifts') }}" class="section-action">View All Shifts</a>
+        </div>
+        
+        <table class="high-density-table">
+            <thead>
+                <tr>
+                    <th>Participant ID</th>
+                    <th style="text-align: center;">Flag Count</th>
+                    <th style="text-align: right;">Leakage Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in participant_breakdown %}
+                <tr>
+                    <td><strong>{{ row.participant_id }}</strong></td>
+                    <td style="text-align: center;">{{ row.flag_count }}</td>
+                    <td style="text-align: right; color: var(--danger); font-weight: 600;">
+                        ${{ "{:,.2f}".format(row.total_discrepancy) }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                        No discrepancies detected. Reconciled successfully!
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Leakage by Staff Member Card -->
+    <div class="section-card">
+        <div class="section-header">
+            <h2 class="section-title">Revenue Leakage by Care Staff (Top 5)</h2>
+            <a href="{{ url_for('unmatched_shifts') }}" class="section-action">View Shifts</a>
+        </div>
+        
+        <table class="high-density-table">
+            <thead>
+                <tr>
+                    <th>Staff ID</th>
+                    <th style="text-align: center;">Flag Count</th>
+                    <th style="text-align: right;">Leakage Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in staff_breakdown %}
+                <tr>
+                    <td><strong>{{ row.staff_id }}</strong></td>
+                    <td style="text-align: center;">{{ row.flag_count }}</td>
+                    <td style="text-align: right; color: var(--danger); font-weight: 600;">
+                        ${{ "{:,.2f}".format(row.total_discrepancy) }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                        No discrepancies detected. Reconciled successfully!
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Upload & Setup Callout -->
+{% if total_shifts == 0 %}
+<div class="section-card" style="text-align: center; padding: 48px; border: 2px dashed var(--border-color); background-color: var(--white);">
+    <i class="fa-solid fa-folder-open" style="font-size: 48px; color: var(--text-muted); margin-bottom: 16px;"></i>
+    <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">No reconciliation data loaded</h2>
+    <p style="color: var(--text-muted); font-size: 14px; max-width: 480px; margin: 0 auto 24px;">
+        To test the billing reconciliation prototype, upload your care shifts (ShiftCare) and accounting invoices (Xero). We have generated realistic sample files that you can use below.
+    </p>
+    {% if user.role in ['admin', 'finance'] %}
+    <a href="{{ url_for('upload') }}" class="btn btn-primary">
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+        <span>Go to Upload Center</span>
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Sample Data Download Area -->
+<div class="sample-downloads-section">
+    <h2 style="font-size: 15px; font-weight: 700; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted);">
+        Download Sample Datasets (CSV & XML)
+    </h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+        <!-- NDIS Price Guide Card -->
+        <div class="sample-row">
+            <div>
+                <h4 class="sample-name">1. NDIS Price Guide 2025-26</h4>
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Reference rate limits & support codes</p>
+            </div>
+            <div class="sample-format-pills">
+                <a href="{{ url_for('download_sample', filename='ndis_price_guide_2025_26.csv') }}" class="btn btn-secondary btn-small" style="padding: 4px 8px; font-size: 10px;">CSV</a>
+                <a href="{{ url_for('download_sample', filename='ndis_price_guide_2025_26.xml') }}" class="btn btn-secondary btn-small" style="padding: 4px 8px; font-size: 10px;">XML</a>
+            </div>
+        </div>
+
+        <!-- ShiftCare Shifts Card -->
+        <div class="sample-row">
+            <div>
+                <h4 class="sample-name">2. ShiftCare Rostered Care Shifts</h4>
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">De-identified shift registry (~200 records)</p>
+            </div>
+            <div class="sample-format-pills">
+                <a href="{{ url_for('download_sample', filename='shiftcare_shifts_sample.csv') }}" class="btn btn-secondary btn-small" style="padding: 4px 8px; font-size: 10px;">CSV</a>
+                <a href="{{ url_for('download_sample', filename='shiftcare_shifts_sample.xml') }}" class="btn btn-secondary btn-small" style="padding: 4px 8px; font-size: 10px;">XML</a>
+            </div>
+        </div>
+
+        <!-- Xero Invoices Card -->
+        <div class="sample-row">
+            <div>
+                <h4 class="sample-name">3. Xero Accounting Invoices</h4>
+                <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Billed invoice line items with rate overruns</p>
+            </div>
+            <div class="sample-format-pills">
+                <a href="{{ url_for('download_sample', filename='xero_invoices_sample.csv') }}" class="btn btn-secondary btn-small" style="padding: 4px 8px; font-size: 10px;">CSV</a>
+                <a href="{{ url_for('download_sample', filename='xero_invoices_sample.xml') }}" class="btn btn-secondary btn-small" style="padding: 4px 8px; font-size: 10px;">XML</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="section-card" style="margin-top: 32px; background-color: #FAFAFA; border: 1px solid var(--border-color);">
+    <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">Reconciliation Matching Logic Rules:</h3>
+    <ol style="font-size: 13px; padding-left: 20px; line-height: 1.6; color: var(--dark);">
+        <li><strong>Primary Match:</strong> Exact match on Participant ID + Service Date + Support Item Code.</li>
+        <li><strong>Secondary Match (±1 Day):</strong> Matches shifts and invoices up to 1 day apart, accommodating billing delays or midnight care-shifts.</li>
+        <li><strong>Tertiary Match (Same Month):</strong> Loose match on Participant ID + Support Code inside the same month. Flagged for manual audit review.</li>
+        <li><strong>Unbilled Shifts:</strong> Unmatched ShiftCare logs representing estimated revenue leakage.</li>
+    </ol>
+</div>
+{% endblock %}
