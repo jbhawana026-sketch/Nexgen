@@ -36,7 +36,7 @@
         </div>
         
         <div style="font-size: 13px; font-weight: 600; color: var(--text-muted);">
-            Showing <span id="filteredCount">0</span> of {{ results|length }} invoice lines
+            Showing <span id="filteredCount">0</span> of {{ results|length }} invoice discrepancy records ({{ results | selectattr('discrepancy_type', 'equalto', 'missing_shift') | list | length }} unmatched invoices, {{ results|length - results | selectattr('discrepancy_type', 'equalto', 'missing_shift') | list | length }} mismatched rate/duration shifts)
         </div>
     </div>
 

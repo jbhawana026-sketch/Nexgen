@@ -11,7 +11,7 @@
         <div class="kpi-value">${{ "{:,.2f}".format(leakage) }}</div>
         <div class="kpi-change negative">
             <i class="fa-solid fa-arrow-trend-up"></i>
-            <span style="margin-left: 4px;">Unbilled care services</span>
+            <span style="margin-left: 4px;">{{ leakage_count }} unbilled / underbilled shifts</span>
         </div>
     </div>
     
@@ -20,7 +20,7 @@
         <div class="kpi-value">${{ "{:,.2f}".format(invoice_errors) }}</div>
         <div class="kpi-change warning">
             <i class="fa-solid fa-triangle-exclamation"></i>
-            <span style="margin-left: 4px;">Discrepancies & missing shifts</span>
+            <span style="margin-left: 4px;">{{ invoice_errors_count }} mismatched / missing entries</span>
         </div>
     </div>
     

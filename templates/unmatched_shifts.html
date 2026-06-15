@@ -37,7 +37,7 @@
         </div>
         
         <div style="font-size: 13px; font-weight: 600; color: var(--text-muted);">
-            Showing <span id="filteredCount">0</span> of {{ results|length }} unmatched logs
+            Showing <span id="filteredCount">0</span> of {{ results|length }} revenue leakage records ({{ results | selectattr('match_status', 'equalto', 'unmatched') | list | length }} unmatched shifts, {{ results | selectattr('match_status', 'equalto', 'partial') | list | length }} underbilled shifts)
         </div>
     </div>
 

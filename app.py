@@ -103,18 +103,24 @@ def dashboard():
     # 1. Fetch KPI metrics
     # Revenue leakage (unmatched active shifts + underbilled duration mismatch)
     cursor.execute("""
-        SELECT COALESCE(SUM(r.discrepancy_amount), 0.0) as val 
+        SELECT 
+            COALESCE(SUM(r.discrepancy_amount), 0.0) as val,
+            COUNT(r.result_id) as count
         FROM reconciliation_results r
         LEFT JOIN shifts s ON r.shift_id = s.shift_id
         LEFT JOIN invoices i ON r.invoice_id = i.invoice_id
         WHERE r.discrepancy_type = 'unbilled_shift'
            OR (r.discrepancy_type = 'duration_mismatch' AND s.duration_hours > i.quantity)
     """)
-    leakage = cursor.fetchone()['val']
+    leakage_row = cursor.fetchone()
+    leakage = leakage_row['val']
+    leakage_count = leakage_row['count']
     
     # Invoice Error cost (unmatched invoices + overbilled rate/duration discrepancies)
     cursor.execute("""
-        SELECT COALESCE(SUM(r.discrepancy_amount), 0.0) as val 
+        SELECT 
+            COALESCE(SUM(r.discrepancy_amount), 0.0) as val,
+            COUNT(r.result_id) as count
         FROM reconciliation_results r
         LEFT JOIN shifts s ON r.shift_id = s.shift_id
         LEFT JOIN invoices i ON r.invoice_id = i.invoice_id
@@ -122,7 +128,9 @@ def dashboard():
            OR r.discrepancy_type = 'rate_mismatch'
            OR (r.discrepancy_type = 'duration_mismatch' AND s.duration_hours < i.quantity)
     """)
-    invoice_errors = cursor.fetchone()['val']
+    invoice_errors_row = cursor.fetchone()
+    invoice_errors = invoice_errors_row['val']
+    invoice_errors_count = invoice_errors_row['count']
     
     # Compliance Risk (Flags count)
     cursor.execute("SELECT COUNT(*) as count FROM compliance_flags")
@@ -185,8 +193,13 @@ def dashboard():
     """)
     staff_breakdown = cursor.fetchall()
     
-    # 3. Overall match status counts for chart representation
-    cursor.execute("SELECT match_status, COUNT(*) as count FROM reconciliation_results GROUP BY match_status")
+    # 3. Overall match status counts for chart representation (shifts only)
+    cursor.execute("""
+        SELECT match_status, COUNT(*) as count 
+        FROM reconciliation_results 
+        WHERE shift_id IS NOT NULL 
+        GROUP BY match_status
+    """)
     status_counts = {row['match_status']: row['count'] for row in cursor.fetchall()}
     
     conn.close()
@@ -194,7 +207,9 @@ def dashboard():
     return render_template('dashboard.html', 
                            user=get_current_user(),
                            leakage=leakage,
+                           leakage_count=leakage_count,
                            invoice_errors=invoice_errors,
+                           invoice_errors_count=invoice_errors_count,
                            compliance_flags_count=compliance_flags_count,
                            coverage=round(coverage, 1),
                            last_upload=last_upload,

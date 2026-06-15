@@ -62,3 +62,20 @@ Insert this new subsection to document the technical insights and how a producti
 > 2. **Direct Integration (Single Source of Truth)**:
 >    * **Issue**: *Relying on CSV file uploads is prone to data quality issues, date format mismatches, and parsing failures.*
 >    * **Production Solution**: *The production system should integrate directly with ShiftCare and Xero via API. Every shift completed in ShiftCare must generate a unique `Shift_Transaction_ID` which is automatically appended to the Xero invoice line item. Matching can then be performed strictly on this unique ID, achieving a 100% match rate with 0% false-positives.*
+
+---
+
+## 4. Amendment to Dashboard Visualisation Claims
+
+If the report references a **doughnut chart** or **pie chart** for reconciliation coverage distribution, this must be corrected:
+
+- **Actual Implementation**: The Splana prototype dashboard uses a **horizontal stacked progress bar** (pure CSS) to display reconciliation coverage distribution, with three colour-coded segments:
+  - 🟢 **Green**: Perfect Match (matched shifts)
+  - 🟡 **Amber**: Partial Mismatches (duration/rate discrepancies)
+  - 🔴 **Red**: Unmatched / Unbilled (revenue leakage)
+
+- **Action Required**: Either:
+  - **Option A (Recommended)**: Replace any doughnut/pie chart description with: *"The dashboard displays a colour-coded horizontal coverage bar showing the distribution of 463 shifts across matched, partial, and unmatched categories."*
+  - **Option B**: Remove the chart reference entirely rather than describing features that aren't implemented in the prototype.
+
+> **Note**: The coverage components in the progress bar sum correctly to **463 total shifts** (e.g. 406 matched + 34 partial + 23 unmatched = 463).

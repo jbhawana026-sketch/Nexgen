@@ -215,27 +215,93 @@ def load_file_as_df(file_path):
         return df
 
 def load_ndis_price_guide(file_path):
+    """
+    Load an NDIS Price Guide CSV or XML into the price_rules table.
+
+    REQUIRED columns (case-insensitive, spaces stripped):
+      - support_item_code   : NDIS support item number (e.g. '01_801_0115_1_1')
+      - price_limit_national: Maximum billable rate in AUD
+    OPTIONAL columns (defaulted to empty string / 0 if absent):
+      - service_description : Human-readable item name
+      - registration_group  : NDIS registration group name
+      - unit                : Billing unit ('hour', 'each', etc.)
+      - effective_from      : Rate validity start date
+      - effective_to        : Rate validity end date
+
+    Common column aliases from official NDIS Price Guide exports are
+    automatically recognised (e.g. 'support_item_name', 'item_name',
+    'national_price_limit', 'reg_group').
+    """
     df = load_file_as_df(file_path)
-    
+
     # Standardize column names (strip spaces, lowercase)
-    df.columns = [c.strip().lower() for c in df.columns]
-    
-    # Required columns check
-    required_cols = ["support_item_code", "service_description", "registration_group", "unit", "price_limit_national", "effective_from", "effective_to"]
-    for col in required_cols:
+    df.columns = [c.strip().lower().replace(' ', '_') for c in df.columns]
+
+    # ── Alias map: accept common real-world NDIS export variants ──────────────
+    ALIASES = {
+        # support_item_code
+        "support_item_number": "support_item_code",
+        "item_code":           "support_item_code",
+        "ndis_code":           "support_item_code",
+        # service_description
+        "support_item_name":   "service_description",
+        "item_name":           "service_description",
+        "description":         "service_description",
+        "service_name":        "service_description",
+        # registration_group
+        "reg_group":           "registration_group",
+        "registration":        "registration_group",
+        "support_category":    "registration_group",
+        # unit
+        "billing_unit":        "unit",
+        "unit_of_measure":     "unit",
+        # price_limit_national
+        "national_price_limit":         "price_limit_national",
+        "price_limit_(national)":        "price_limit_national",
+        "national_non-remote_price":     "price_limit_national",
+        "non-remote":                    "price_limit_national",
+        "price": "price_limit_national",
+        # effective dates
+        "start_date":  "effective_from",
+        "date_from":   "effective_from",
+        "end_date":    "effective_to",
+        "date_to":     "effective_to",
+    }
+    df.rename(columns=lambda c: ALIASES.get(c, c), inplace=True)
+
+    # ── Fuzzy fallback: substring match for any still-missing column ───────────
+    TRULY_REQUIRED = ["support_item_code", "price_limit_national"]
+    ALL_EXPECTED   = ["support_item_code", "service_description", "registration_group",
+                      "unit", "price_limit_national", "effective_from", "effective_to"]
+
+    for col in ALL_EXPECTED:
         if col not in df.columns:
-            matches = [c for c in df.columns if col in c]
+            matches = [c for c in df.columns if col.replace('_', '') in c.replace('_', '')]
             if matches:
                 df.rename(columns={matches[0]: col}, inplace=True)
-            else:
-                raise ValueError(f"Missing required column in Price Guide: {col}. Available: {list(df.columns)}")
-                
+
+    # ── Validate truly required columns ───────────────────────────────────────
+    missing = [c for c in TRULY_REQUIRED if c not in df.columns]
+    if missing:
+        raise ValueError(
+            f"Wrong file type? This upload slot expects an NDIS Price Guide file.\n"
+            f"Missing required column(s): {missing}.\n"
+            f"Found columns: {list(df.columns)}\n"
+            f"Expected columns include: {ALL_EXPECTED}"
+        )
+
+    # ── Insert optional columns as empty if absent ────────────────────────────
+    for optional_col in ["service_description", "registration_group", "unit",
+                         "effective_from", "effective_to"]:
+        if optional_col not in df.columns:
+            df[optional_col] = ""
+
     conn = get_db()
     cursor = conn.cursor()
-    
+
     # Clear and reload
     cursor.execute("DELETE FROM price_rules")
-    
+
     success_count = 0
     for idx, row in df.iterrows():
         try:
@@ -244,18 +310,18 @@ def load_ndis_price_guide(file_path):
             reg_group = str(row["registration_group"]).strip() if not pd.isna(row["registration_group"]) else ""
             unit = str(row["unit"]).strip() if not pd.isna(row["unit"]) else ""
             limit = clean_amount(row["price_limit_national"])
-            eff_from = parse_date(row["effective_from"])
-            eff_to = parse_date(row["effective_to"])
-            
+            eff_from = parse_date(row["effective_from"]) if row["effective_from"] else None
+            eff_to   = parse_date(row["effective_to"])   if row["effective_to"]   else None
+
             cursor.execute("""
-            INSERT OR REPLACE INTO price_rules 
+            INSERT OR REPLACE INTO price_rules
             (support_item_code, service_description, registration_group, unit, price_limit_national, effective_from, effective_to)
             VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (code, desc, reg_group, unit, limit, eff_from, eff_to))
             success_count += 1
         except Exception as e:
             print(f"Error loading price rule at row {idx}: {e}")
-            
+
     conn.commit()
     conn.close()
     return success_count

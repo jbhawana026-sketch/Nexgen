@@ -171,16 +171,18 @@ def process_match(cursor, shift, inv, base_status, tier_name, price_rules):
     # 1. Check Duration Mismatch
     duration_diff = shift["duration_hours"] - inv["quantity"]
     has_duration_mismatch = abs(duration_diff) > 0.05
-    
     duration_mismatch_amount = 0.0
     if has_duration_mismatch:
         base_status = "partial"
-        duration_mismatch_amount = abs(duration_diff) * limit
         severity = "medium"
+        # Store the FULL shift value (duration * rate) as the discrepancy amount
+        duration_mismatch_amount = shift["duration_hours"] * limit
         if duration_diff > 0:
-            notes += f" Underbilled by {duration_diff:.2f} hours (leakage of ${duration_mismatch_amount:.2f})."
+            diff_amount = duration_diff * limit
+            notes += f" Underbilled by {duration_diff:.2f} hours (${diff_amount:.2f} difference). Full shift value: ${duration_mismatch_amount:.2f}."
         else:
-            notes += f" Overbilled client by {abs(duration_diff):.2f} hours (overbill of ${duration_mismatch_amount:.2f})."
+            diff_amount = abs(duration_diff) * limit
+            notes += f" Overbilled client by {abs(duration_diff):.2f} hours (${diff_amount:.2f} difference). Full shift value: ${duration_mismatch_amount:.2f}."
             
     # 2. Check Rate Mismatch (invoiced unit rate vs price guide)
     has_rate_mismatch = False
