@@ -1,0 +1,15 @@
+.git
+.gitignore
+.idea
+.venv
+__pycache__
+*.pyc
+*.db
+uploads/
+*.docx
+*.pdf
+*.md
+sample_data/
+verify_*.py
+generate_mock_data.py
+eb-tail-logs.txt

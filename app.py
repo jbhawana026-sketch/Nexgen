@@ -7,9 +7,15 @@ from werkzeug.security import check_password_hash
 from database import get_db, init_db, load_ndis_price_guide, load_shiftcare_shifts, load_xero_invoices
 from reconciler import run_reconciliation
 
+import platform
+
 app = Flask(__name__)
 app.secret_key = "splana_reconciliation_prototype_secret_key"
-UPLOAD_FOLDER = 'uploads'
+
+if platform.system() == "Linux" and os.environ.get("AWS_EXECUTION_ENV"):
+    UPLOAD_FOLDER = '/tmp/uploads'
+else:
+    UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 

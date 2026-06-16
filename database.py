@@ -4,7 +4,13 @@ import pandas as pd
 from datetime import datetime
 from werkzeug.security import generate_password_hash
 
-DB_NAME = "ndis_recon.db"
+import platform
+
+if platform.system() == "Linux" and os.environ.get("AWS_EXECUTION_ENV"):
+    # On Elastic Beanstalk, use /tmp for writable storage
+    DB_NAME = "/tmp/ndis_recon.db"
+else:
+    DB_NAME = "ndis_recon.db"
 
 def get_db():
     conn = sqlite3.connect(DB_NAME)
